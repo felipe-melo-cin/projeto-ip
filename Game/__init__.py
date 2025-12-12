@@ -1,7 +1,7 @@
 import pygame
-import MainFolder.Interfaces as Interfaces
-import MainFolder.Sprites as Sprites
-import MainFolder.Others as Others
+import Interfaces
+import Sprites
+import Others
 
 # OBJETO DO MOUSE
 MOUSE = Others.Mouse()
