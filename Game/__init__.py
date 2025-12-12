@@ -1,6 +1,10 @@
 import pygame
 import MainFolder.Interfaces as Interfaces
-import MainFolder.Characters as Characters
+import MainFolder.Sprites as Sprites
+import MainFolder.Others as Others
+
+# OBJETO DO MOUSE
+MOUSE = Others.Mouse()
 
 class Game:
 
@@ -17,37 +21,67 @@ class Game:
         self.screen_size = screen_size
         self.screen = None
 
-        # ADMINISTRADOR DE ESTADOS
+        # GERENCIADOR DE ESTADOS
         self.gsm = None
 
     def screen_init(self):
+        # INICIALIZANDO A TELA INICIAL
         self.screen = Interfaces.Screen()
         self.screen.set_title(self.game_title)
         self.screen.set_size(self.screen_size)
         self.screen.show()
 
     def gsm_init(self, bundles, first_state):
+        # INICIALIZANDO O GERENCIADOR DE ESTADOS
         self.gsm = GameStateManager()
 
+        # CRIANDO ESTADOS
         for state_bundle in bundles:
             self.gsm.create_state(state_bundle)
 
+        # SELECIONANDO O PRIMEIRO ESTADO
         self.gsm.set_state(first_state)
 
     def run(self):
-
+        # EXECUTANDO A TELA INICIAL
         self.gsm.set_state('main menu')
 
         while True:
             # LOOP DE EVENTOS
             for event in pygame.event.get():
 
+                # SAIR
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     raise SystemExit
 
+                # INICIOU O CLIQUE COM O MOUSE
+                if event.type == pygame.MOUSEBUTTONDOWN:
+
+                    if event.button == 1:
+                        MOUSE.set_left_click()
+
+                    if event.button == 3:
+                        MOUSE.set_right_click()
+
+                # TERMINOU O CLIQUE COM O MOUSE
+                if event.type == pygame.MOUSEBUTTONUP:
+
+                    if event.button == 1:
+                        MOUSE.reset_left_press()
+
+                    if event.button == 3:
+                        MOUSE.reset_right_press()
+
+                # OBJETO DO TIMER CHEGOU A ZERO
+                if event.type == Others.RING_EVENT:
+                    pass
+
             current_state = self.gsm.get_state()
             current_state(self.screen, self.gsm).run()
+
+            MOUSE.reset_left_click()
+            MOUSE.reset_right_click()
 
             # ATUALIZA O DISPLAY
             self.screen.update()

@@ -1,7 +1,4 @@
-import pygame
 import Game
-import Interfaces
-import Characters
 
 if __name__ == '__main__':
 
