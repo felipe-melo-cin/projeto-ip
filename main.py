@@ -1,11 +1,7 @@
 import Game
+from Constantes import GAME_TITLE, SCREEN_DIMENSIONS, FPS
 
 if __name__ == '__main__':
-
-    # TÍTULO DO JOGO, DIMENSÕES DA TELA E TAXA DE QUADROS
-    GAME_TITLE = 'PyGame'
-    SCREEN_DIMENSIONS = (720, 480)
-    FPS = 60
 
     # ESTADOS E CLASSES DO ADMINISTRADOR DE ESTADOS
     BUNDLES = (('main menu', Game.MainMenu), ('main game', Game.MainGame))

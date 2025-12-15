@@ -1,6 +1,5 @@
 import pygame
-
-RING_EVENT = pygame.event.custom_type()
+import Constantes as k
 
 class Mouse:
 
@@ -12,43 +11,54 @@ class Mouse:
 
     @property
     def position(self):
+        # RETORNA A POSIÇÃO DO MOUSE
         return pygame.mouse.get_pos()
 
     def set_left_click(self):
+        # INICIA O CLIQUE ESQUERDO DO MOUSE
         self.left_click = True
         self.left_press = True
 
     def set_right_click(self):
+        # INICIA O CLIQUE DIREITO DO MOUSE
         self.right_click = True
         self.right_press = True
 
     def reset_left_click(self):
+        # TERMINA O CLIQUE ESQUERDO
         self.left_click = False
 
     def reset_right_click(self):
+        # TERMINA O CLIQUE DIREITO
         self.right_click = False
 
     def reset_left_press(self):
+        # TERMINA O PRESSIONAMENTO DO BOTÃO ESQUERDO
         self.left_press = False
 
     def reset_right_press(self):
+        # TERMINA O PRESSIONAMENTO DO BOTÃO DIREITO
         self.right_press = False
 
+# UM TIMER QUE CONTA ATÉ ZERO
 class Timer:
 
     def __init__(self):
         self.start_time = None
         self.time_limit = None
         self.current_time = None
-        self.POST_EVENT = pygame.event.Event(RING_EVENT, {'caller': self})
+        self.POST_EVENT = pygame.event.Event(k.RING_EVENT, {'caller': self})
 
+    # PREPARA O TIMER COM UM DADO TEMPO EM SEGUNDOS
     def set_timer_seconds(self, time):
         self.start_time = time * 1000
 
+    # ATIVA O TIMER
     def activate(self):
         self.time_limit = self.start_time + pygame.time.get_ticks()
         self.current_time = self.start_time
 
+    # CHECA SE O TIMER ATINGIU O LIMITE DE TEMPO, DEVE SER CHAMADO NO LOOP PRINCIPAL DO PROGRAMA
     def ring(self):
         if self.current_time > 0:
             self.current_time = self.time_limit - pygame.time.get_ticks()

@@ -12,6 +12,7 @@ class Sprite(pygame.sprite.Sprite):
         self.image = None
         self.rect = None
 
+    # INICIALIZA O OBJETO EM UM MODO E POSIÇÃO, COM UM PERÍODO DE ANIMAÇÃO
     def set_animation(self, mode, position, period):
         self.current_mode = mode
         self.period = period
@@ -21,9 +22,11 @@ class Sprite(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.topleft = position
 
+    # CRIA UMA LISTA DE SPRITES PARA UM DADO MODO DO OBJETO
     def set_sprites(self, mode, sprites):
         self.sprites[mode] = sprites
 
+    # ATUALIZA O SPRITE DO OBJETO
     def update(self):
         self.sprite_count += 1
         if self.sprite_count >= self.period:
@@ -42,41 +45,56 @@ class Player(Sprite):
         self.dampen = dampen
         self.critical_damp = cdamp
 
+    # MOVIMENTAÇÃO DO PLAYER, DEVE SER CHAMADA NO LOOP PRINCIPAL DO PROGRAMA
     def move(self, directions=(False, False, False, False)):
 
+        # VELOCIDADE NO EIXO X
         x_speed = self.current_speed[0]
 
+        # PLAYER NÃO PODE PASSAR DA VELOCIDADE MÁXIMA (EIXO X)
         if abs(x_speed) > self.max_speed:
             self.current_speed[0] = self.max_speed * (-1 + 2 * (x_speed > 0))
 
+        # ACELERA PARA A ESQUERDA
         if directions[0]:
             self.current_speed[0] -= self.acceleration
+        # ACELERA PARA A DIREITA
         if directions[1]:
             self.current_speed[0] += self.acceleration
 
+        # DESACELERA QUANDO NÃO HÁ INPUT (EIXO X)
         if not (directions[0] or directions[1]) and abs(x_speed) > self.critical_damp:
             self.current_speed[0] += self.dampen * (-1 + 2 * (x_speed < 0))
+        # PARA TOTALMENTE QUANDO ATINGE UM LIMITE CRÍTICO DE VELOCIDADE (EIXO X)
         if not (directions[0] or directions[1]) and abs(x_speed) <= self.critical_damp:
             self.current_speed[0] = 0
 
+        # MOVIMENTA O PLAYER NO EIXO X
         x_speed = self.current_speed[0]
         self.rect.x += x_speed
 
+        # VELOCIDADE NO EIXO Y
         y_speed = self.current_speed[1]
 
+        # PLAYER NÃO PODE PASSAR DA VELOCIDADE MÁXIMA (EIXO Y)
         if abs(y_speed) > self.max_speed:
             self.current_speed[1] = self.max_speed * (-1 + 2 * (y_speed > 0))
 
+        # ACELERA PARA CIMA
         if directions[2]:
             self.current_speed[1] -= self.acceleration
+        # ACELERA PARA BAIXO
         if directions[3]:
             self.current_speed[1] += self.acceleration
 
+        # DESACELERA QUANDO NÃO HÁ INPUT (EIXO Y)
         if not (directions[2] or directions[3]) and abs(y_speed) > self.critical_damp:
             self.current_speed[1] += self.dampen * (-1 + 2 * (y_speed < 0))
+        # PARA TOTALMENTE QUANDO ATINGE UM LIMITE CRÍTICO DE VELOCIDADE (EIXO Y)
         if not (directions[2] or directions[3]) and abs(y_speed) <= self.critical_damp:
             self.current_speed[1] = 0
 
+        # MOVIMENTA O PLAYER NO EIXO Y
         y_speed = self.current_speed[1]
         self.rect.y += y_speed
 
