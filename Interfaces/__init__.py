@@ -46,7 +46,6 @@ class Button(ABC, pygame.surface.Surface):
 
     # CHECAGEM DE ESTADO DO BOTÃO
     def update(self):
-
         # MOUSE ESTÁ OU NÃO NA TELA
         if not pygame.mouse.get_focused():
             mouse_collide = False
@@ -83,6 +82,7 @@ class Button(ABC, pygame.surface.Surface):
     def main_action(self):
         pass
 
+    @abstractmethod
     def side_action(self):
         pass
 
@@ -98,6 +98,7 @@ class Button(ABC, pygame.surface.Surface):
     def main_press(self):
         pass
 
+    @abstractmethod
     def side_press(self):
         pass
 
@@ -155,6 +156,7 @@ class TileGrid(ButtonGrid):
                 button_x, button_y = button.rect.topleft
                 self.put_inside(button, (button_x - offset_x, button_y - offset_y))
                 button.update()
+        self.minefield.win_check()
 
     def fill_matrix(self):
         offset_x, offset_y = self.rect.topleft
@@ -175,6 +177,18 @@ class TileGrid(ButtonGrid):
 
             fill_pointer_x = 0
             fill_pointer_y += self.button_height
+
+    def get_tile(self, coordinates):
+        for tile_line in self.button_matrix:
+            for tile in tile_line:
+                if tile.rect.collidepoint(coordinates):
+                    return tile
+
+    def get_minefield_coordinates(self, screen_coordinates):
+        for tile_line in self.button_matrix:
+            for tile in tile_line:
+                if tile.rect.collidepoint(screen_coordinates):
+                    return tile.coordinates
 
 class ToMainGameButton(Button):
 
@@ -231,6 +245,7 @@ class Tile(Button):
         self.coordinates = coordinates
         self.i, self.j = coordinates
         self.code = 10
+        self.close_to_player = False
 
     def update(self):
         Button.update(self)
@@ -247,6 +262,8 @@ class Tile(Button):
             self.code = 9
         else:
             self.code = mask_tile
+
+        self.close_to_player = False
 
     def draw_line(self, color, mod_a, mod_b):
         rect = self.get_rect()
@@ -299,13 +316,12 @@ class Tile(Button):
             self.draw_line(k.COLOR_GRAY, (0.25, 0.75), (0.75, 0.75))
 
     def main_action(self):
-        self.minefield.dig(self.coordinates)
+        if self.close_to_player:
+            self.minefield.dig(self.coordinates)
 
     def side_action(self):
-        if self.code == 10:
-            self.minefield.minefield_interface[self.i][self.j] = 2
-        elif self.code == 11:
-            self.minefield.minefield_interface[self.i][self.j] = 0
+        if self.close_to_player:
+            self.minefield.flag(self.coordinates)
 
     def idle(self):
         if self.code == 10:

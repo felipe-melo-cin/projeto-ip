@@ -1,4 +1,8 @@
 import pygame
+from abc import ABC, abstractmethod
+import Others
+import Constantes as k
+
 
 class Sprite(pygame.sprite.Sprite):
 
@@ -26,6 +30,17 @@ class Sprite(pygame.sprite.Sprite):
     def set_sprites(self, mode, sprites):
         self.sprites[mode] = sprites
 
+    def set_mode(self, mode):
+        self.current_mode = mode
+
+    # RETORNA A POSIÇÃO DO SPRITE NA TELA
+    def get_position(self):
+        return self.rect.topleft
+
+    # DEFINE A POSIÇÃO DO SPRITE NA TELA
+    def set_position(self, position):
+        self.rect.topleft = position
+
     # ATUALIZA O SPRITE DO OBJETO
     def update(self):
         self.sprite_count += 1
@@ -44,6 +59,27 @@ class Player(Sprite):
         self.acceleration = acc
         self.dampen = dampen
         self.critical_damp = cdamp
+        self.facing = 0
+        self.facing_sprites_names = []
+        self.digging = False
+        self.max_lives = k.MIAUSMA_LIVES
+        self.lives = k.MIAUSMA_LIVES
+        self.max_flags = k.MIAUSMA_FLAGS
+        self.flags = k.MIAUSMA_FLAGS
+
+    def bind_facing_sprites(self, names):
+        self.facing_sprites_names = names
+
+    def face(self, side):
+        if self.digging and self.current_sprite == len(self.sprites[self.current_mode]) - 1:
+            self.digging = False
+        if side != self.facing and not self.digging:
+            self.facing = side
+            mode = self.facing_sprites_names[side]
+            self.set_animation(mode, self.rect.topleft, self.period)
+
+    def damage(self, value):
+        self.lives -= value
 
     # MOVIMENTAÇÃO DO PLAYER, DEVE SER CHAMADA NO LOOP PRINCIPAL DO PROGRAMA
     def move(self, directions=(False, False, False, False)):
@@ -98,5 +134,96 @@ class Player(Sprite):
         y_speed = self.current_speed[1]
         self.rect.y += y_speed
 
-class Collectable:
-    pass
+    def get_current_speed(self):
+        return self.current_speed
+
+    def set_current_speed(self, speed):
+        self.current_speed = speed
+
+class Flag(Sprite):
+
+    placed_flags = {}
+
+    def __init__(self, spawn, change_mode):
+        super().__init__()
+        self.spawn = spawn
+        self.change_mode = change_mode
+        self.coordinate = None
+
+    def update(self):
+        Sprite.update(self)
+        if self.spawn and self.current_sprite == len(self.sprites[self.current_mode]) - 1:
+            self.spawn = False
+            self.current_mode = self.change_mode
+
+    def generate(self, position, group, layer):
+        new_flag = self.__class__(True, self.change_mode)
+        new_flag.sprites = self.sprites
+        new_flag.set_animation(self.current_mode, position, self.period)
+        group.add(new_flag, layer=layer)
+        return new_flag
+
+class Collectable(ABC, Sprite):
+
+    def __init__(self, player, spawn, change_mode, lifetime):
+        super().__init__()
+        self.player = player
+        self.spawn = spawn
+        self.change_mode = change_mode
+        self.lifetime = lifetime
+        self.timer = Others.Timer()
+        self.timer.set_timer_seconds(lifetime)
+        self.timer.activate()
+
+    def update(self):
+        Sprite.update(self)
+        if self.spawn and self.current_sprite == len(self.sprites[self.current_mode]) - 1:
+            self.spawn = False
+            self.current_mode = self.change_mode
+        if self.rect.collidepoint(self.player.rect.center) and not self.spawn:
+            self.kill()
+            self.effect()
+        if self.timer.ring():
+            self.kill()
+
+    def generate(self, position, group, layer):
+        new_collectable = self.__class__(self.player, True, self.change_mode, self.lifetime)
+        new_collectable.sprites = self.sprites
+        new_collectable.set_animation(self.current_mode, position, self.period)
+        group.add(new_collectable, layer=layer)
+
+    @abstractmethod
+    def effect(self):
+        pass
+
+class LifeCollectable(Collectable):
+
+    def __init__(self, player, spawn, change_mode, lifetime):
+        super().__init__(player, spawn, change_mode, lifetime)
+
+    def effect(self):
+        if self.player.lives + 1 > self.player.max_lives:
+            pass
+        else:
+            self.player.lives += 1
+
+class TimeCollectable(Collectable):
+
+    def __init__(self, player, spawn, change_mode, lifetime):
+        super().__init__(player, spawn, change_mode, lifetime)
+
+    def effect(self):
+        pass
+
+class FlagCollectable(Collectable):
+
+    def __init__(self, player, spawn, change_mode, lifetime):
+        super().__init__(player, spawn, change_mode, lifetime)
+
+    def effect(self):
+        pass
+
+'''class ToMainGameButtonMask(Sprite):
+
+    def __init__(self):
+        super().__init__()'''

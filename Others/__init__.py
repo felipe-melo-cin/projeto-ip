@@ -41,13 +41,12 @@ class Mouse:
         self.right_press = False
 
 # UM TIMER QUE CONTA ATÉ ZERO
-class Timer:
+class Timer():
 
     def __init__(self):
         self.start_time = None
         self.time_limit = None
         self.current_time = None
-        self.POST_EVENT = pygame.event.Event(k.RING_EVENT, {'caller': self})
 
     # PREPARA O TIMER COM UM DADO TEMPO EM SEGUNDOS
     def set_timer_seconds(self, time):
@@ -58,9 +57,10 @@ class Timer:
         self.time_limit = self.start_time + pygame.time.get_ticks()
         self.current_time = self.start_time
 
-    # CHECA SE O TIMER ATINGIU O LIMITE DE TEMPO, DEVE SER CHAMADO NO LOOP PRINCIPAL DO PROGRAMA
+    # CHECA SE O TIMER ATINGIU O LIMITE DE TEMPO
     def ring(self):
         if self.current_time > 0:
             self.current_time = self.time_limit - pygame.time.get_ticks()
+            return False
         else:
-            pygame.event.post(self.POST_EVENT)
+            return True
