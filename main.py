@@ -9,8 +9,7 @@ if __name__ == '__main__':
     # INICIALIZANDO O JOGO
     game = Game.Game(GAME_TITLE, SCREEN_DIMENSIONS, FPS)
 
-    # CRIAÇÃO E INICIALIZAÇÃO DA TELA INICIAL E DO ADMINISTRADOR DE ESTADOS
-    game.screen_init()
+    # CRIAÇÃO E INICIALIZAÇÃO DO ADMINISTRADOR DE ESTADOS
     game.gsm_init(BUNDLES, 'main menu')
 
     # INICIALIZAÇÃO DO JOGO

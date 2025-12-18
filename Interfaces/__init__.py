@@ -37,12 +37,14 @@ class Screen:
 class Button(ABC, pygame.surface.Surface):
 
     def __init__(self, size, position, mouse):
-        super().__init__(size)
+        super().__init__(size, pygame.SRCALPHA)
         self.left_pressed = None
         self.right_pressed = None
         self.rect = self.get_rect()
         self.rect.topleft = position
         self.MOUSE = mouse
+        self.idling = False
+        self.hovering = False
 
     # CHECAGEM DE ESTADO DO BOTÃO
     def update(self):
@@ -178,17 +180,31 @@ class TileGrid(ButtonGrid):
             fill_pointer_x = 0
             fill_pointer_y += self.button_height
 
-    def get_tile(self, coordinates):
+    def get_tile_absolute(self, coordinates):
         for tile_line in self.button_matrix:
             for tile in tile_line:
                 if tile.rect.collidepoint(coordinates):
                     return tile
+
+    def get_tile_abstract(self, coordinates):
+        i_tile, j_tile = coordinates
+        return self.button_matrix[i_tile][j_tile]
 
     def get_minefield_coordinates(self, screen_coordinates):
         for tile_line in self.button_matrix:
             for tile in tile_line:
                 if tile.rect.collidepoint(screen_coordinates):
                     return tile.coordinates
+
+    def set_damage_available(self):
+        for tile_line in self.button_matrix:
+            for tile in tile_line:
+                tile.damage_available = True
+
+    def set_damage_unavailable(self):
+        for tile_line in self.button_matrix:
+            for tile in tile_line:
+                tile.damage_available = False
 
 class ToMainGameButton(Button):
 
@@ -203,16 +219,18 @@ class ToMainGameButton(Button):
         pass
 
     def idle(self):
-        self.fill('white')
+        self.idling = True
+        self.hovering = False
 
     def hover(self):
-        self.fill('gray')
+        self.idling = False
+        self.hovering = True
 
     def main_press(self):
-        self.fill('black')
+        self.hover()
 
     def side_press(self):
-        pass
+        self.hover()
 
 class QuitGameButton(Button):
 
@@ -226,16 +244,45 @@ class QuitGameButton(Button):
         pass
 
     def idle(self):
-        self.fill('crimson')
+        self.idling = True
+        self.hovering = False
 
     def hover(self):
-        self.fill('dark red')
+        self.idling = False
+        self.hovering = True
 
     def main_press(self):
-        self.fill('black')
+        self.hover()
 
     def side_press(self):
+        self.hover()
+
+class PauseButton(Button):
+
+    def __init__(self, size, position, mouse, rendered_text):
+        super().__init__(size, position, mouse)
+        self.rendered_text = rendered_text
+
+    def main_action(self):
         pass
+
+    def side_action(self):
+        pass
+
+    def idle(self):
+        self.fill((0, 0, 0, 0))
+        pygame.draw.rect(self, k.COLOR_WHITE, (0, 0, k.PAUSE_BUTTON_SIZE[0], k.PAUSE_BUTTON_SIZE[1]), width=k.PAUSE_BUTTON_BORDER_WIDTH, border_radius=k.PAUSE_BUTTON_BORDER_RADIUS)
+        self.blit(self.rendered_text, (self.get_size()[0] * 0.5 - self.rendered_text.get_size()[0] * 0.5, self.get_size()[1] * 0.5 - self.rendered_text.get_size()[1] * 0.5))
+
+    def hover(self):
+        pygame.draw.rect(self, k.COLOR_BLACK, (0, 0, k.PAUSE_BUTTON_SIZE[0], k.PAUSE_BUTTON_SIZE[1]), border_radius=k.PAUSE_BUTTON_BORDER_RADIUS)
+        self.blit(self.rendered_text, (self.get_size()[0] * 0.5 - self.rendered_text.get_size()[0] * 0.5, self.get_size()[1] * 0.5 - self.rendered_text.get_size()[1] * 0.5))
+
+    def main_press(self):
+        self.hover()
+
+    def side_press(self):
+        self.hover()
 
 class Tile(Button):
 
@@ -245,7 +292,8 @@ class Tile(Button):
         self.coordinates = coordinates
         self.i, self.j = coordinates
         self.code = 10
-        self.close_to_player = False
+        self.proximity_available = False
+        self.damage_available = True
 
     def update(self):
         Button.update(self)
@@ -316,11 +364,11 @@ class Tile(Button):
             self.draw_line(k.COLOR_GRAY, (0.25, 0.75), (0.75, 0.75))
 
     def main_action(self):
-        if self.close_to_player:
+        if self.proximity_available and self.damage_available:
             self.minefield.dig(self.coordinates)
 
     def side_action(self):
-        if self.close_to_player:
+        if self.proximity_available and self.damage_available:
             self.minefield.flag(self.coordinates)
 
     def idle(self):
@@ -328,13 +376,14 @@ class Tile(Button):
             self.fill(k.COLOR_PURPLE)
             pygame.draw.rect(self, k.COLOR_DARK_PURPLE, self.get_rect(), k.TILE_WIDTH)
         elif self.code == 11:
-            self.fill(k.COLOR_RED)
-            pygame.draw.rect(self, k.COLOR_DARK_RED, self.get_rect(), k.TILE_WIDTH)
-        elif self.code == 9:
-            pass
-        else:
             self.fill(k.COLOR_YELLOW)
-            pygame.draw.rect(self, k.COLOR_DARK_YELLOW, self.get_rect(), k.TILE_WIDTH)
+            pygame.draw.rect(self, k.COLOR_BLACK, self.get_rect(), k.TILE_WIDTH)
+        elif self.code == 9:
+            self.fill(k.COLOR_DARK_GRAY)
+            pygame.draw.rect(self, k.COLOR_BLACK, self.get_rect(), k.TILE_WIDTH)
+        else:
+            self.fill(k.COLOR_PALE_YELLOW)
+            pygame.draw.rect(self, k.COLOR_PALE_DARK_YELLOW, self.get_rect(), k.TILE_WIDTH)
             self.draw_number(self.code)
 
     def hover(self):
@@ -342,13 +391,14 @@ class Tile(Button):
             self.fill(k.COLOR_DARK_PURPLE)
             pygame.draw.rect(self, k.COLOR_DARK_PURPLE, self.get_rect(), k.TILE_WIDTH)
         elif self.code == 11:
-            self.fill(k.COLOR_DARK_RED)
-            pygame.draw.rect(self, k.COLOR_DARK_RED, self.get_rect(), k.TILE_WIDTH)
-        elif self.code == 9:
-            pass
-        else:
             self.fill(k.COLOR_YELLOW)
             pygame.draw.rect(self, k.COLOR_DARK_YELLOW, self.get_rect(), k.TILE_WIDTH)
+        elif self.code == 9:
+            self.fill(k.COLOR_BLACK)
+            pygame.draw.rect(self, k.COLOR_BLACK, self.get_rect(), k.TILE_WIDTH)
+        else:
+            self.fill(k.COLOR_PALE_YELLOW)
+            pygame.draw.rect(self, k.COLOR_PALE_DARK_YELLOW, self.get_rect(), k.TILE_WIDTH)
             self.draw_number(self.code)
 
     def main_press(self):

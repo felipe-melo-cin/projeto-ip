@@ -62,6 +62,7 @@ class Player(Sprite):
         self.facing = 0
         self.facing_sprites_names = []
         self.digging = False
+        self.damaged = False
         self.max_lives = k.MIAUSMA_LIVES
         self.lives = k.MIAUSMA_LIVES
         self.max_flags = k.MIAUSMA_FLAGS
@@ -73,16 +74,28 @@ class Player(Sprite):
     def face(self, side):
         if self.digging and self.current_sprite == len(self.sprites[self.current_mode]) - 1:
             self.digging = False
-        if side != self.facing and not self.digging:
+        if side != self.facing and not self.digging and not self.damaged:
             self.facing = side
             mode = self.facing_sprites_names[side]
             self.set_animation(mode, self.rect.topleft, self.period)
 
     def damage(self, value):
+        self.damaged = True
         self.lives -= value
+        if self.lives < 0:
+            post_event = pygame.event.Event(k.GAME_OVER)
+            pygame.event.post(post_event)
+
+    def wake(self):
+        self.damaged = False
 
     # MOVIMENTAÇÃO DO PLAYER, DEVE SER CHAMADA NO LOOP PRINCIPAL DO PROGRAMA
     def move(self, directions=(False, False, False, False)):
+
+        if self.damaged:
+            self.acceleration = 0
+        else:
+            self.acceleration = k.MIAUSMA_ACC
 
         # VELOCIDADE NO EIXO X
         x_speed = self.current_speed[0]
@@ -140,6 +153,21 @@ class Player(Sprite):
     def set_current_speed(self, speed):
         self.current_speed = speed
 
+class ButtonMask(Sprite):
+
+    def __init__(self, button, idle_mode, hover_mode):
+        super().__init__()
+        self.button = button
+        self.idle_mode = idle_mode
+        self.hover_mode = hover_mode
+
+    def update(self):
+        Sprite.update(self)
+        if self.button.idling and self.current_mode != self.idle_mode:
+            self.current_mode = self.idle_mode
+        if self.button.hovering and self.current_mode != self.hover_mode:
+            self.current_mode = self.hover_mode
+
 class Flag(Sprite):
 
     placed_flags = {}
@@ -158,6 +186,39 @@ class Flag(Sprite):
 
     def generate(self, position, group, layer):
         new_flag = self.__class__(True, self.change_mode)
+        new_flag.sprites = self.sprites
+        new_flag.set_animation(self.current_mode, position, self.period)
+        group.add(new_flag, layer=layer)
+        return new_flag
+
+class Bomb(Sprite):
+
+    def __init__(self, spawn, change_mode1, change_mode2):
+        super().__init__()
+        self.spawn = spawn
+        self.charging = False
+        self.change_mode1 = change_mode1
+        self.change_mode2 = change_mode2
+        self.coordinate = None
+
+    def update(self):
+        Sprite.update(self)
+        if self.spawn and not self.charging and self.current_sprite == len(self.sprites[self.current_mode]) - 1:
+            self.spawn = False
+            self.charging = True
+            self.current_mode = self.change_mode1
+            self.current_sprite = 0
+        if not self.spawn and self.charging and self.current_sprite == len(self.sprites[self.current_mode]) - 1:
+            self.charging = False
+            self.current_mode = self.change_mode2
+            self.current_sprite = 0
+            post_event = pygame.event.Event(k.DAMAGE_PLAYER)
+            pygame.event.post(post_event)
+        if not self.spawn and not self.charging and self.current_sprite == len(self.sprites[self.current_mode]) - 1:
+            self.kill()
+
+    def generate(self, position, group, layer):
+        new_flag = self.__class__(True, self.change_mode1, self.change_mode2)
         new_flag.sprites = self.sprites
         new_flag.set_animation(self.current_mode, position, self.period)
         group.add(new_flag, layer=layer)
@@ -222,8 +283,3 @@ class FlagCollectable(Collectable):
 
     def effect(self):
         pass
-
-'''class ToMainGameButtonMask(Sprite):
-
-    def __init__(self):
-        super().__init__()'''

@@ -47,6 +47,7 @@ class Timer():
         self.start_time = None
         self.time_limit = None
         self.current_time = None
+        self.activated = False
 
     # PREPARA O TIMER COM UM DADO TEMPO EM SEGUNDOS
     def set_timer_seconds(self, time):
@@ -54,13 +55,16 @@ class Timer():
 
     # ATIVA O TIMER
     def activate(self):
+        self.activated = True
         self.time_limit = self.start_time + pygame.time.get_ticks()
         self.current_time = self.start_time
 
     # CHECA SE O TIMER ATINGIU O LIMITE DE TEMPO
     def ring(self):
-        if self.current_time > 0:
-            self.current_time = self.time_limit - pygame.time.get_ticks()
-            return False
-        else:
-            return True
+        if self.activated:
+            if self.current_time > 0:
+                self.current_time = self.time_limit - pygame.time.get_ticks()
+                return False
+            else:
+                self.activated = False
+                return True

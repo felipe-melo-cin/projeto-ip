@@ -88,20 +88,20 @@ class AbstractMinefield:
                         self.dig((i_tile + i, j_tile + j), False)
 
             # ACERTOU UMA MINA SEM SER A PRIMEIRA ESCAVAÇÃO
-            elif self.minefield[i_tile][j_tile]:
-                post_event = pygame.event.Event(k.MINESWEEPER_MISS)
+            elif self.minefield[i_tile][j_tile] and self.minefield_interface[i_tile][j_tile] != 3:
+                self.minefield_interface[i_tile][j_tile] = 3
+                post_event = pygame.event.Event(k.MINESWEEPER_MISS, {'coordinates': (i_tile, j_tile)})
                 pygame.event.post(post_event)
 
             # REVELOU UM LADRILHO SEM SER A PRIMEIRA ESCAVAÇÃO
-            elif not self.minefield_interface[i_tile][j_tile]:
+            elif self.minefield_interface[i_tile][j_tile] in (0, 2) and not self.minefield[i_tile][j_tile]:
                 if primary_dig:
                     post_event = pygame.event.Event(k.MINESWEEPER_PRIMARY_HIT, {'coordinates': (i_tile, j_tile)})
                     pygame.event.post(post_event)
-                if not (self.minefield_interface[i_tile][j_tile] or self.minefield[i_tile][j_tile]):
-                    self.minefield_interface[i_tile][j_tile] = 1
-                    self.discovered_tiles += 1
-                    post_event = pygame.event.Event(k.MINESWEEPER_HIT, {'coordinates': (i_tile, j_tile)})
-                    pygame.event.post(post_event)
+                self.minefield_interface[i_tile][j_tile] = 1
+                self.discovered_tiles += 1
+                post_event = pygame.event.Event(k.MINESWEEPER_HIT, {'coordinates': (i_tile, j_tile)})
+                pygame.event.post(post_event)
                 for i, j in ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)):
                     if self.height > i_tile + i >= 0 and self.width > j_tile + j >= 0 and self.minefield_interface[i_tile + i][j_tile + j] != 1 and not self.minefield_mask[i_tile][j_tile]:
                         self.dig((i_tile + i, j_tile + j), False)
