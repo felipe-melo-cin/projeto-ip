@@ -206,6 +206,16 @@ class TileGrid(ButtonGrid):
             for tile in tile_line:
                 tile.damage_available = False
 
+    def set_flag_available(self):
+        for tile_line in self.button_matrix:
+            for tile in tile_line:
+                tile.flag_available = True
+
+    def set_flag_unavailable(self):
+        for tile_line in self.button_matrix:
+            for tile in tile_line:
+                tile.flag_available = False
+
 class ToMainGameButton(Button):
 
     def __init__(self, size, position, mouse, gsm):
@@ -214,6 +224,8 @@ class ToMainGameButton(Button):
 
     def main_action(self):
         self.gsm.set_state('main game')
+        post_event = pygame.event.Event(k.TO_MAIN_GAME_TRANSITION)
+        pygame.event.post(post_event)
 
     def side_action(self):
         pass
@@ -223,6 +235,9 @@ class ToMainGameButton(Button):
         self.hovering = False
 
     def hover(self):
+        if self.idling:
+            post_event = pygame.event.Event(k.BUTTON_HOVER)
+            pygame.event.post(post_event)
         self.idling = False
         self.hovering = True
 
@@ -238,7 +253,8 @@ class QuitGameButton(Button):
         super().__init__(size, position, mouse)
 
     def main_action(self):
-        pygame.event.post(pygame.event.Event(pygame.QUIT))
+        post_event = pygame.event.Event(pygame.QUIT)
+        pygame.event.post(post_event)
 
     def side_action(self):
         pass
@@ -248,6 +264,9 @@ class QuitGameButton(Button):
         self.hovering = False
 
     def hover(self):
+        if self.idling:
+            post_event = pygame.event.Event(k.BUTTON_HOVER)
+            pygame.event.post(post_event)
         self.idling = False
         self.hovering = True
 
@@ -264,7 +283,8 @@ class PauseButton(Button):
         self.rendered_text = rendered_text
 
     def main_action(self):
-        pass
+        post_event = pygame.event.Event(k.GAME_PAUSE)
+        pygame.event.post(post_event)
 
     def side_action(self):
         pass
@@ -294,6 +314,7 @@ class Tile(Button):
         self.code = 10
         self.proximity_available = False
         self.damage_available = True
+        self.flag_available = True
 
     def update(self):
         Button.update(self)
@@ -368,7 +389,7 @@ class Tile(Button):
             self.minefield.dig(self.coordinates)
 
     def side_action(self):
-        if self.proximity_available and self.damage_available:
+        if self.proximity_available and self.damage_available and (self.flag_available or self.code == 11):
             self.minefield.flag(self.coordinates)
 
     def idle(self):
@@ -406,3 +427,21 @@ class Tile(Button):
 
     def side_press(self):
         self.hover()
+
+class LifeIconArray:
+
+    def __init__(self, lives, life_array, full_sprite, hollow_sprite):
+        self.lives = lives
+        self.life_array = life_array
+        self.full_sprite = full_sprite
+        self.hollow_sprite = hollow_sprite
+
+    def set_lives(self, lives):
+        self.lives = lives
+
+    def update(self):
+        for life in range(1, len(self.life_array) + 1):
+            if life <= self.lives:
+                self.life_array[life - 1] = self.full_sprite
+            else:
+                self.life_array[life - 1] = self.hollow_sprite

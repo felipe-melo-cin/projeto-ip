@@ -53,6 +53,14 @@ class Timer():
     def set_timer_seconds(self, time):
         self.start_time = time * 1000
 
+    # ADICIONA TEMPO AO TIMER
+    def add_time_seconds(self, time):
+        self.time_limit += time * 1000
+
+    def get_current_time_seconds(self):
+        if self.activated:
+            return self.current_time // 1000
+
     # ATIVA O TIMER
     def activate(self):
         self.activated = True
@@ -67,4 +75,5 @@ class Timer():
                 return False
             else:
                 self.activated = False
+                self.current_time = 0
                 return True

@@ -1,10 +1,15 @@
 import pygame
 import Interfaces
+import Sounds
 import Sprites
 import Others
 import Constantes as k
 import Algoritmos
-from random import randint
+
+from random import randint, choice
+
+# PRÉ-INICIALIZANDO O MIXER (OTIMIZAÇÃO)
+pygame.mixer.pre_init(44100, 16, 2, 4096)
 
 # INICIALIZANDO PYGAME
 pygame.init()
@@ -15,15 +20,43 @@ SCREEN.set_title(k.GAME_TITLE)
 SCREEN.set_size(k.SCREEN_DIMENSIONS)
 SCREEN.show()
 
+# PREPARANDO PLAYLISTS
+PLAYLIST_MAIN_MENU = Sounds.Playlist(k.PLAYLIST_MAIN_MENU_MUSICS)
+PLAYLIST_MAIN_MENU.queue_shuffle()
+PLAYLIST_MAIN_MENU.set_volume(k.VOLUME_BGM)
+PLAYLIST_MAIN_MENU.start()
+
+PLAYLIST_MAIN_GAME = Sounds.Playlist(k.PLAYLIST_MAIN_GAME_MUSICS)
+PLAYLIST_MAIN_GAME.queue_shuffle()
+
+# PREPARANDO EFEITOS SONOROS
+SFX_STORAGE = {
+    'SELECT': Sounds.SFX('Audio/sfx/select.ogg', k.VOLUME_SFX),
+    'OUCH': Sounds.SFX('Audio/sfx/ouch.ogg', k.VOLUME_SFX),
+    'BLIP': Sounds.SFX('Audio/sfx/blip.ogg', k.VOLUME_SFX),
+    'BOOM': Sounds.SFX('Audio/sfx/boom.ogg', k.VOLUME_SFX),
+    'DIG': [Sounds.SFX('Audio/sfx/dig0.ogg', k.VOLUME_SFX), Sounds.SFX('Audio/sfx/dig1.ogg', k.VOLUME_SFX), Sounds.SFX('Audio/sfx/dig2.ogg', k.VOLUME_SFX)],
+    'FLAG': Sounds.SFX('Audio/sfx/flag.ogg', k.VOLUME_SFX),
+    'VICTORY': Sounds.SFX('Audio/sfx/victory.ogg', k.VOLUME_SFX),
+    'MEOW': [Sounds.SFX('Audio/sfx/meow.ogg', k.VOLUME_SFX)],
+    'LOAD': Sounds.SFX('Audio/sfx/load.ogg', k.VOLUME_SFX),
+    'SHOOT': Sounds.SFX('Audio/sfx/shoot.ogg', k.VOLUME_SFX),
+    'CHEER': Sounds.SFX('Audio/sfx/cheer.ogg', k.VOLUME_SFX),
+    'SCREAM': Sounds.SFX('Audio/sfx/scream.ogg', k.VOLUME_SFX),
+}
+
 # OBJETO DO MOUSE
 MOUSE = Others.Mouse()
 
 # FONTE CUSTOMIZADA
-PURGE_SERIF = pygame.font.Font('Fonts/purge_serif.ttf', 180)
+PURGE_SERIF_175 = pygame.font.Font('Fonts/purge_serif.ttf', 175)
+PURGE_SERIF_180 = pygame.font.Font('Fonts/purge_serif.ttf', 180)
+PURGE_SERIF_415 = pygame.font.Font('Fonts/purge_serif.ttf', 415)
 
 # FONTE EXTRA
 FUZZY_BUBBLES_40 = pygame.font.Font('Fonts/fuzzy_bubbles.ttf', 40)
 FUZZY_BUBBLES_60 = pygame.font.Font('Fonts/fuzzy_bubbles.ttf', 60)
+FUZZY_BUBBLES_100 = pygame.font.Font('Fonts/fuzzy_bubbles.ttf', 80)
 
 # PLANO DE FUNDO DO MENU PRINCIPAL
 BACKGROUND_MAIN_MENU = k.resize_image(k.SCREEN_DIMENSIONS, 'Images/background_main_menu.png')
@@ -139,6 +172,9 @@ MIAUSMA.set_animation('idle', k.set_proportion(2.14, 2.24), 7)
 
 MIAUSMA_REACTS = Sprites.Sprite()
 
+# REAÇÃO BASE QUE MUDA QUANDO O TEMPO ESTÁ ACABANDO
+MIAUSMA_REACTS_BASE = ['normal']
+
 MIAUSMA_REACTS.set_sprites('normal', k.resize_images(k.MIAUSMA_REACT_SIZE, (
     'Images/REAGE_NORMAL0.png',
     'Images/REAGE_NORMAL1.png',
@@ -155,6 +191,24 @@ MIAUSMA_REACTS.set_sprites('sem tempo', k.resize_images(k.MIAUSMA_REACT_SIZE, (
     'Images/REAGE_SEM_TEMPO3.png',
     'Images/REAGE_SEM_TEMPO4.png',
     'Images/REAGE_SEM_TEMPO5.png'
+)))
+
+MIAUSMA_REACTS.set_sprites('chora', k.resize_images(k.MIAUSMA_REACT_SIZE, (
+    'Images/REAGE_CHORA0.png',
+    'Images/REAGE_CHORA1.png',
+    'Images/REAGE_CHORA2.png',
+    'Images/REAGE_CHORA3.png',
+    'Images/REAGE_CHORA4.png',
+    'Images/REAGE_CHORA5.png'
+)))
+
+MIAUSMA_REACTS.set_sprites('choque', k.resize_images(k.MIAUSMA_REACT_SIZE, (
+    'Images/REAGE_CHOQUE0.png',
+    'Images/REAGE_CHOQUE1.png',
+    'Images/REAGE_CHOQUE2.png',
+    'Images/REAGE_CHOQUE3.png',
+    'Images/REAGE_CHOQUE4.png',
+    'Images/REAGE_CHOQUE5.png'
 )))
 
 # INICIALIZANDO REAÇÕES DO PROTAGONISTA
@@ -255,32 +309,34 @@ TIME_COLLECTABLE.set_sprites('idle', k.resize_images(k.SIZE_COLLECTABLES, (
 )))
 
 # COLETÁVEL DE BANDEIRA (NÃO IMPLEMENTADO)
-'''FLAG_COLLECTABLE = Sprites.FlagCollectable(MIAUSMA, False, 'idle', k.LIFETIME_COLLECTABLES)
+FLAG_COLLECTABLE = Sprites.FlagCollectable(MIAUSMA, False, 'idle', k.LIFETIME_COLLECTABLES)
 
 FLAG_COLLECTABLE.set_sprites('emerge', k.resize_images(k.SIZE_COLLECTABLES, (
-    '../Images/flag_cll_emerge0.png',
-    '../Images/flag_cll_emerge1.png',
-    '../Images/flag_cll_emerge2.png',
-    '../Images/flag_cll_emerge3.png',
-    '../Images/flag_cll_emerge4.png',
-    '../Images/flag_cll_emerge5.png',
-    '../Images/flag_cll_emerge5.png',
+    'Images/flag_cll_emerge0.png',
+    'Images/flag_cll_emerge1.png',
+    'Images/flag_cll_emerge2.png',
+    'Images/flag_cll_emerge3.png',
+    'Images/flag_cll_emerge4.png',
+    'Images/flag_cll_emerge5.png',
+    'Images/flag_cll_emerge5.png',
+    'Images/flag_cll_emerge6.png',
 )))
 
 FLAG_COLLECTABLE.set_sprites('idle', k.resize_images(k.SIZE_COLLECTABLES, (
-    '../Images/flag_cll_idle0.png',
-    '../Images/flag_cll_idle1.png',
-    '../Images/flag_cll_idle2.png',
-    '../Images/flag_cll_idle3.png',
-    '../Images/flag_cll_idle4.png',
-    '../Images/flag_cll_idle5.png',
-)))'''
+    'Images/flag_cll_idle0.png',
+    'Images/flag_cll_idle1.png',
+    'Images/flag_cll_idle2.png',
+    'Images/flag_cll_idle3.png',
+    'Images/flag_cll_idle4.png',
+    'Images/flag_cll_idle5.png',
+)))
 
 # INICIALIZANDO ANIMAÇÃO DOS OBJETOS E COLETÁVEIS
 FLAG_OBJECT.set_animation('emerge', (-1000, -1000), 7)
 BOMB_OBJECT.set_animation('emerge', (-1000, -1000), 5)
 LIFE_COLLECTABLE.set_animation('emerge', (-1000, -1000), 7)
 TIME_COLLECTABLE.set_animation('emerge', (-1000, -1000), 7)
+FLAG_COLLECTABLE.set_animation('emerge', (-1000, -1000), 7)
 
 # GRUPO DE SPRITES DO JOGO
 PURGATORY = pygame.sprite.LayeredUpdates()
@@ -288,6 +344,7 @@ PURGATORY.add(MIAUSMA, layer=1)
 PURGATORY.add(MIAUSMA_REACTS)
 PURGATORY.add(LIFE_COLLECTABLE)
 PURGATORY.add(TIME_COLLECTABLE)
+PURGATORY.add(FLAG_COLLECTABLE)
 
 # BOTÕES
 TO_MAIN_GAME_BUTTON = Interfaces.ToMainGameButton(k.TO_MAIN_GAME_BUTTON_SIZE, k.TO_MAIN_GAME_BUTTON_POSITION, MOUSE, None)
@@ -345,14 +402,36 @@ BUTTON_MASKS.add(QUIT_GAME_BUTTON_MASK)
 LEFT_PLACEHOLDER = BACKGROUND_MAIN_GAME.subsurface((0, 0, k.MIAUSMA_REACT_SIZE[0], k.SCREEN_HEIGHT)).convert()
 RIGHT_PLACEHOLDER = BACKGROUND_MAIN_GAME.subsurface((k.MIAUSMA_REACT_SIZE[0] + k.MINEFIELD_SIZE[0], 0, k.MIAUSMA_REACT_SIZE[0], k.SCREEN_HEIGHT)).convert()
 
+# NOTA DO JOGADOR COM BASE NA PONTUAÇÃO
+PLAYER_GRADE = [PURGE_SERIF_415.render('', True, k.COLOR_YELLOW)]
+
+# TEXTO COM A PONTUAÇÃO
+GAME_SCORE = [PURGE_SERIF_175.render(k.display_score(MIAUSMA.score), True, k.COLOR_WHITE)]
+
+# TEXTO DE PONTUAÇÃO
+GAME_SCORE_LABEL = FUZZY_BUBBLES_40.render('PONTUAÇÃO', True, k.COLOR_WHITE)
+
+# TEXTO COM O MULTIPLICADOR
+GAME_MULTIPLIER = [FUZZY_BUBBLES_60.render(k.display_multiplier(MIAUSMA.multiplier), True, k.COLOR_WHITE)]
+
 # TEXTO DE TEMPO RESTANTE
 TIME_LEFT_LABEL = FUZZY_BUBBLES_40.render('TEMPO RESTANTE', True, k.COLOR_WHITE)
 
 # TEMPO RESTANTE
-TIME_LEFT = [PURGE_SERIF.render(k.time_milliseconds_to_display(k.TIME_LIMIT_SECONDS), True, k.COLOR_WHITE)]
+TIME_LEFT = [PURGE_SERIF_180.render(k.time_milliseconds_to_display(k.TIME_LIMIT_SECONDS * 1000), True, k.COLOR_WHITE)]
 
-# PLACAR DE VIDA
-LIFE_DISPLAY = k.resize_image(k.LIFE_DISPLAY_SIZE, 'Images/placar_vidas.png').convert_alpha()
+# TEXTO COM A CONTAGEM DE BANDEIRAS
+FLAG_COUNTER = [FUZZY_BUBBLES_100.render(k.display_out_of(MIAUSMA.flags, MIAUSMA.max_flags), True, k.COLOR_WHITE)]
+
+# IMAGEM DE BANDEIRA
+FLAG_ICON = k.resize_image(k.FLAG_ICON_SIZE, 'Images/flag_cll_idle0.png')
+
+# PLACAR DE VIDA E AS VIDAS
+LIFE_DISPLAY = k.resize_image(k.LIFE_DISPLAY_SIZE, 'Images/placar_vidas.png')
+SEVEN_LIVES = Interfaces.LifeIconArray(
+    7, [k.resize_image(k.LIFE_ICON_SIZE, 'Images/heart_full.png') for _ in range(7)],
+    k.resize_image(k.LIFE_ICON_SIZE, 'Images/heart_full.png'), k.resize_image(k.LIFE_ICON_SIZE, 'Images/heart_hollow.png')
+)
 
 # PARTE LÓGICA DO CAMPO MINADO
 ABSTRACT_MINEFIELD = Algoritmos.AbstractMinefield(k.ABSTRACT_MINEFIELD_SIZE, k.ABSTRACT_MINEFIELD_DENSITY)
@@ -366,11 +445,32 @@ MINEFIELD.fill_matrix()
 # COMEÇO DO JOGO
 GAME_START_VALUE = [None]
 
+# DIÁLOGO DE PAUSE
+PAUSE_DIALOGUE = FUZZY_BUBBLES_60.render('PRESSIONE ESC PARA RETORNAR AO JOGO', True, k.COLOR_WHITE)
+
 # TIMER DO JOGO
 GAME_TIMER = Others.Timer()
 
 # TIMER DE DISPONIBILIDADE DOS LADRILHOS
 AVAILABLE_TILE_TIMER = Others.Timer()
+
+# TIMERS DEPOIS DO FIM
+END_TIMERS = [Others.Timer() for _ in range(5)]
+
+# TEXTO DA HORA DO JULGAMENTO
+JUDGEMENT_TIME_LABEL = RETURN_DIALOGUE = FUZZY_BUBBLES_100.render('HORA DO JULGAMENTO', True, k.COLOR_WHITE)
+
+# TEXTO DO JULGAMENTO
+JUDGEMENT_LABEL = RETURN_DIALOGUE = FUZZY_BUBBLES_100.render('VOCÊ É...', True, k.COLOR_WHITE)
+
+# PONTUAÇÃO FINAL
+FINAL_SCORE = []
+
+# DIÁLOGO DE RETORNO
+RETURN_DIALOGUE = FUZZY_BUBBLES_40.render('PRESSIONE ESC PARA RETORNAR AO MENU PRINCIPAL', True, k.COLOR_WHITE)
+
+# PONTUAÇÃO PARA CONTAR NA TELA FINAL
+COUNTING_SCORE = [0]
 
 class Game:
 
@@ -407,6 +507,12 @@ class Game:
         current_state = self.gsm.get_state()
 
         while True:
+
+            if self.gsm.get_state == EndScreen:
+                self.gsm.run()
+                SCREEN.update()
+                continue
+
             # LOOP DE EVENTOS
             for event in pygame.event.get():
 
@@ -414,6 +520,25 @@ class Game:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     raise SystemExit
+
+                if event.type == k.GAME_PAUSE and not GAME_START_VALUE:
+                    pause_start_time = pygame.time.get_ticks()
+                    pygame.mixer.music.pause()
+                    pause = True
+                    while pause:
+                        for event in pygame.event.get():
+                            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                                pause = False
+
+                        if not pause:
+                            pause_end_time = pygame.time.get_ticks()
+                            GAME_TIMER.add_time_seconds((pause_end_time - pause_start_time) // 1000)
+                            pygame.mixer.music.unpause()
+                            break
+
+                        SCREEN.fill(k.COLOR_BLACK)
+                        SCREEN.put_inside(PAUSE_DIALOGUE, k.PAUSE_DIALOGUE_POSITION)
+                        SCREEN.update()
 
                 # INICIOU O CLIQUE COM O MOUSE
                 if event.type == pygame.MOUSEBUTTONDOWN:
@@ -433,8 +558,23 @@ class Game:
                     if event.button == 3: # CLIQUE COM BOTÃO DIREITO
                         MOUSE.reset_right_press()
 
+                if event.type == pygame.KEYDOWN:
+
+                    if event.key == pygame.K_e:
+                        choice(SFX_STORAGE['MEOW']).play()
+
                 # LIMPOU O CAMPO MINADO
                 if event.type == k.MINESWEEPER_WIN:
+                    SFX_STORAGE['VICTORY'].play()
+                    MIAUSMA.score_points(1000 + MIAUSMA.lives * 100 + GAME_TIMER.get_current_time_seconds() * 100)
+                    for tile_line in MINEFIELD.button_matrix:
+                        for tile in tile_line:
+                            if tile.code == 11:
+                                MIAUSMA.score_points(20)
+
+                    MIAUSMA.increment_multiplier()
+                    GAME_MULTIPLIER[0] = FUZZY_BUBBLES_60.render(k.display_multiplier(MIAUSMA.multiplier), True, k.COLOR_WHITE)
+
                     # PREENCHE O CAMPO MINADO MAIS UMA VEZ
                     ABSTRACT_MINEFIELD.__init__(k.ABSTRACT_MINEFIELD_SIZE, k.ABSTRACT_MINEFIELD_DENSITY)
                     MINEFIELD.__init__(k.MINEFIELD_SIZE, k.MINEFIELD_POSITION, MOUSE, Interfaces.Tile, (k.MINEFIELD_SIZE[0] // k.ABSTRACT_MINEFIELD_SIZE[0], k.MINEFIELD_SIZE[1] // k.ABSTRACT_MINEFIELD_SIZE[1]), ABSTRACT_MINEFIELD)
@@ -452,6 +592,8 @@ class Game:
 
                 # DESCOBRIU UM LADRILHO LIVRE NO CAMPO MINADO (IGNORA REAÇÕES EM CADEIA)
                 if event.type == k.MINESWEEPER_PRIMARY_HIT:
+                    choice(SFX_STORAGE['DIG']).play()
+                    MIAUSMA.score_points(15)
                     tile_x, tile_y = event.coordinates
                     hit_tile = MINEFIELD.button_matrix[tile_x][tile_y]
                     MIAUSMA.rect.center = hit_tile.rect.center
@@ -466,6 +608,14 @@ class Game:
 
                 # DESCOBRIU UM LADRILHO LIVRE NO CAMPO MINADO
                 if event.type == k.MINESWEEPER_HIT:
+
+                    # ELIMINA AS BANDEIRAS QUE ESTIVEREM EM CAMPOS VAZIOS
+                    placed_flags = Sprites.Flag.placed_flags
+                    if event.coordinates in placed_flags:
+                        placed_flags[event.coordinates].kill()
+                        del placed_flags[event.coordinates]
+
+                    MIAUSMA.score_points(5)
                     tile_x, tile_y = event.coordinates
                     generation_tile = MINEFIELD.button_matrix[tile_x][tile_y]
                     tile_x, tile_y = generation_tile.rect.topleft
@@ -477,6 +627,8 @@ class Game:
                         LIFE_COLLECTABLE.generate((tile_x + tile_x_size * 0.5 - life_x_size * 0.5, tile_y + tile_y_size * 0.5 - life_y_size * 0.5), PURGATORY, 2)
                     if randint(1, k.RNG_TIME_COLLECTABLE) == 1:
                         TIME_COLLECTABLE.generate((tile_x + tile_x_size * 0.5 - life_x_size * 0.5, tile_y + tile_y_size * 0.5 - life_y_size * 0.5), PURGATORY, 2)
+                    if randint(1, k.RNG_FLAG_COLLECTABLE) == 1:
+                        FLAG_COLLECTABLE.generate((tile_x + tile_x_size * 0.5 - life_x_size * 0.5, tile_y + tile_y_size * 0.5 - life_y_size * 0.5), PURGATORY, 2)
 
                 # ACERTOU UMA BOMBA NO CAMPO MINADO
                 if event.type == k.MINESWEEPER_MISS:
@@ -486,10 +638,19 @@ class Game:
                     bomb_x_size, bomb_y_size = BOMB_OBJECT.rect.size
 
                     # GERA A BOMBA
-                    new_bomb = BOMB_OBJECT.generate((tile_x - bomb_x_size // 2, tile_y - bomb_y_size // 1.3), PURGATORY, 0)
+                    BOMB_OBJECT.generate((tile_x - bomb_x_size // 2, tile_y - bomb_y_size // 1.3), PURGATORY, 0)
 
                 # PLANTOU UMA BANDEIRA NO CAMPO MINADO
                 if event.type == k.MINESWEEPER_FLAG:
+                    SFX_STORAGE['FLAG'].play()
+                    MIAUSMA_REACTS.set_animation(MIAUSMA_REACTS_BASE[0], k.MIAUSMA_REACT_POSITION, 3)
+                    MIAUSMA.flag_down(1)
+                    if not GAME_START_VALUE:
+                        MIAUSMA.score_points(5)
+
+                    if MIAUSMA.flags <= 0:
+                        MINEFIELD.set_flag_unavailable()
+
                     tile_x, tile_y = event.coordinates
                     generation_tile = MINEFIELD.button_matrix[tile_x][tile_y]
                     tile_x, tile_y = generation_tile.rect.topleft
@@ -507,6 +668,7 @@ class Game:
 
                 # REMOVEU UMA BANDEIRA DO CAMPO MINADO
                 if event.type == k.MINESWEEPER_UNFLAG:
+
                     placed_flags = Sprites.Flag.placed_flags
                     if event.coordinates in placed_flags:
                         placed_flags[event.coordinates].kill()
@@ -514,31 +676,98 @@ class Game:
 
                 # O PROTAGONISTA SOFREU DANO
                 if event.type == k.DAMAGE_PLAYER:
+                    SFX_STORAGE['BOOM'].play()
+                    if randint(1, 2) == 1:
+                        MIAUSMA_REACTS.set_animation('chora', k.MIAUSMA_REACT_POSITION, 3)
+                    else:
+                        MIAUSMA_REACTS.set_animation('choque', k.MIAUSMA_REACT_POSITION, 1)
                     MINEFIELD.set_damage_unavailable()
                     AVAILABLE_TILE_TIMER.set_timer_seconds(1)
                     AVAILABLE_TILE_TIMER.activate()
                     MIAUSMA.set_mode('hurt')
                     MIAUSMA.damage(1)
+                    SEVEN_LIVES.set_lives(MIAUSMA.lives)
+
+                # ENTROU-SE NA TELA DO JOGO
+                if event.type == k.TO_MAIN_GAME_TRANSITION:
+                    SFX_STORAGE['SELECT'].play()
+                    PLAYLIST_MAIN_MENU.stop(1)
+
+                # O CURSOR COMEÇA A PAIRAR SOBRE UM BOTÃO
+                if event.type == k.BUTTON_HOVER:
+                    SFX_STORAGE['BLIP'].play()
+
+                # JOGADOR COLETOU UM COLETÁVEL
+                if event.type == k.GET_COLLECTABLE:
+                    MIAUSMA_REACTS.set_animation(MIAUSMA_REACTS_BASE[0], k.MIAUSMA_REACT_POSITION, 3)
+
+                    if event.caller.__class__ == Sprites.LifeCollectable:
+                        MIAUSMA.heal(1)
+                        SEVEN_LIVES.set_lives(MIAUSMA.lives)
+
+                    if event.caller.__class__ == Sprites.TimeCollectable:
+                        GAME_TIMER.add_time_seconds(3)
+
+                    if event.caller.__class__ == Sprites.FlagCollectable:
+                        MINEFIELD.set_flag_available()
+                        MIAUSMA.flag_up(1)
+
+                # PROTAGONISTA SE CUROU ALÉM DO NECESSÁRIO
+                if event.type == k.OVERHEAL:
+                    MIAUSMA.score_points(200)
+
+                # PROTAGONISTA PEGOU MAIS BANDEIRAS QUE O NECESSÁRIO
+                if event.type == k.OVERFLAG:
+                    MIAUSMA.score_points(100)
 
                 # O JOGO COMEÇOU
                 if event.type == k.GAME_START:
+                    PLAYLIST_MAIN_GAME.start()
                     GAME_TIMER.set_timer_seconds(k.TIME_LIMIT_SECONDS)
                     GAME_TIMER.activate()
 
                 # O JOGO ACABOU
                 if event.type == k.GAME_OVER:
+                    MIAUSMA_REACTS.set_animation('chora', k.MIAUSMA_REACT_POSITION, 3)
+                    MINEFIELD.set_damage_unavailable()
                     GAME_START_VALUE.append(None)
+                    PLAYLIST_MAIN_GAME.stop(1)
+                    PLAYLIST_MAIN_GAME.next()
+                    END_TIMERS[0].set_timer_seconds(3)
+                    END_TIMERS[0].activate()
+                    FINAL_SCORE.append(MIAUSMA.score)
+                    GAME_SCORE[0] = PURGE_SERIF_175.render(k.display_score(0), True, k.COLOR_WHITE)
+                    self.gsm.set_state('end screen')
+                    break
 
+            if self.gsm.get_state == EndScreen:
+                continue
+
+            # TEMPO ACABOU
             if GAME_TIMER.ring():
-                TIME_LEFT[0] = PURGE_SERIF.render(k.time_milliseconds_to_display(0), True, k.COLOR_WHITE)
+                TIME_LEFT[0] = PURGE_SERIF_180.render(k.time_milliseconds_to_display(0), True, k.COLOR_WHITE)
                 post_event = pygame.event.Event(k.GAME_OVER)
                 pygame.event.post(post_event)
-            elif GAME_TIMER.current_time:
-                TIME_LEFT[0] = PURGE_SERIF.render(k.time_milliseconds_to_display(GAME_TIMER.current_time), True, k.COLOR_WHITE)
+            # TEMPO AINDA NÃO ACABOU
+            elif GAME_TIMER.get_current_time_seconds():
+                TIME_LEFT[0] = PURGE_SERIF_180.render(k.time_milliseconds_to_display(GAME_TIMER.current_time), True, k.COLOR_WHITE)
 
-            if AVAILABLE_TILE_TIMER.ring():
+                if GAME_TIMER.get_current_time_seconds() < 20:
+                    MIAUSMA_REACTS_BASE[0] = 'sem tempo'
+
+            # PROTAGONISTA NÃO ESTÁ MAIS ATORDOADO
+            if AVAILABLE_TILE_TIMER.ring() and not GAME_START_VALUE:
+                SFX_STORAGE['OUCH'].play()
                 MINEFIELD.set_damage_available()
                 MIAUSMA.wake()
+
+            if not GAME_START_VALUE:
+                # RENDERIZAÇÃO DA NOTA E PONTUAÇÃO DO JOGADOR
+                PLAYER_GRADE[0] = PURGE_SERIF_415.render(k.score_grade(MIAUSMA.score), True, k.COLOR_YELLOW)
+                GAME_SCORE[0] = PURGE_SERIF_175.render(k.display_score(MIAUSMA.score), True, k.COLOR_WHITE)
+
+            # RENDERIZAÇÃO DA QUANTIDADE DE BANDEIRAS DO JOGADOR
+            FLAG_COUNTER[0] = FUZZY_BUBBLES_100.render(k.display_out_of(MIAUSMA.flags, MIAUSMA.max_flags), True, k.COLOR_WHITE)
 
             # MOVIMENTAÇÃO E EFEITOS DE PROXIMIDADE NO JOGO
             if current_state == MainGame:
@@ -686,6 +915,18 @@ class MainGame:
         self.screen.put_inside(LEFT_PLACEHOLDER, (0, 0))
         self.screen.put_inside(RIGHT_PLACEHOLDER, (k.MIAUSMA_REACT_SIZE[0] + k.MINEFIELD_SIZE[0], 0))
 
+        # INSERE A NOTA DO PLAYER NA TELA
+        self.screen.put_inside(PLAYER_GRADE[0], k.PLAYER_GRADE_POSITION)
+
+        # INSERE A PONTUAÇÃO NA TELA
+        self.screen.put_inside(GAME_SCORE[0], k.GAME_SCORE_POSITION)
+
+        # INSERE O TEXTO DE PONTUAÇÃO NA TELA
+        self.screen.put_inside(GAME_SCORE_LABEL, k.GAME_SCORE_LABEL_POSITION)
+
+        # INSERE O MULTIPLICADOR NA TELA
+        self.screen.put_inside(GAME_MULTIPLIER[0], k.GAME_MULTIPLIER_POSITION)
+
         # INSERE O BOTÃO DE PAUSE NA TELA
         self.screen.put_inside(PAUSE_BUTTON, k.PAUSE_BUTTON_POSITION)
 
@@ -695,8 +936,21 @@ class MainGame:
         # INSERE O TEMPO RESTANTE NA TELA
         self.screen.put_inside(TIME_LEFT[0], k.TIME_LEFT_POSITION)
 
+        # INSERE O CONTADOR DE BANDEIRAS NA TELA
+        self.screen.put_inside(FLAG_COUNTER[0], k.FLAG_COUNTER_POSITION)
+
+        # INSERE O ÍCONE DE BANDEIRA NA TELA
+        self.screen.put_inside(FLAG_ICON, k.FLAG_ICON_POSITION)
+
         # INSERE O PLACAR DE VIDA NA TELA
         self.screen.put_inside(LIFE_DISPLAY, k.LIFE_DISPLAY_POSITION)
+
+        # ATUALIZA AS VIDAS NO PLACAR DE VIDA
+        SEVEN_LIVES.update()
+
+        # INSERE OS ÍCONES DE VIDA NA TELA
+        for position, life in enumerate(SEVEN_LIVES.life_array):
+            self.screen.put_inside(life, k.LIFE_ICONS_POSITION[position])
 
         # INSERE OS SPRITES DO JOGO NA TELA
         PURGATORY.draw(self.screen.display)
@@ -709,3 +963,89 @@ class MainGame:
 
         # CARREGA OS SPRITES DO JOGO NA TELA
         PURGATORY.update()
+
+class EndScreen:
+
+    def __init__(self, screen, gsm):
+        # INICIA A TELA DO FIM DE JOGO
+        self.screen = screen
+        self.gsm = gsm
+
+    def run(self):
+        if END_TIMERS[0].ring():
+            self.screen.fill(k.COLOR_BLACK)
+            END_TIMERS[1].set_timer_seconds(3)
+            END_TIMERS[1].activate()
+        elif END_TIMERS[0].activated:
+            pygame.draw.line(self.screen.display, k.COLOR_BLACK, (randint(0, k.SCREEN_WIDTH), randint(0, k.SCREEN_HEIGHT)), (randint(0, k.SCREEN_WIDTH), randint(0, k.SCREEN_HEIGHT)), 100)
+
+        if END_TIMERS[1].ring():
+            self.screen.put_inside(JUDGEMENT_TIME_LABEL, k.JUDGEMENT_TIME_LABEL_POSITION)
+            self.screen.put_inside(GAME_SCORE[0], k.GAME_SCORE_POSITION2)
+            END_TIMERS[2].set_timer_seconds(3)
+            END_TIMERS[2].activate()
+
+        if END_TIMERS[2].ring():
+            while COUNTING_SCORE[0] < FINAL_SCORE[0] // 2:
+                self.screen.fill(k.COLOR_BLACK)
+                COUNTING_SCORE[0] += FINAL_SCORE[0] / 1000
+                GAME_SCORE[0] = PURGE_SERIF_175.render(k.display_score(COUNTING_SCORE[0]), True, k.COLOR_WHITE)
+                self.screen.put_inside(JUDGEMENT_LABEL, k.JUDGEMENT_LABEL_POSITION)
+                self.screen.put_inside(GAME_SCORE[0], k.GAME_SCORE_POSITION2)
+                self.screen.update()
+            self.screen.fill(k.COLOR_BLACK)
+            COUNTING_SCORE[0] = FINAL_SCORE[0] // 2
+            GAME_SCORE[0] = PURGE_SERIF_175.render(k.display_score(COUNTING_SCORE[0]), True, k.COLOR_WHITE)
+            self.screen.put_inside(JUDGEMENT_LABEL, k.JUDGEMENT_LABEL_POSITION)
+            self.screen.put_inside(GAME_SCORE[0], k.GAME_SCORE_POSITION2)
+            self.screen.update()
+            END_TIMERS[3].set_timer_seconds(1)
+            END_TIMERS[3].activate()
+            SFX_STORAGE['LOAD'].play()
+
+        if END_TIMERS[3].ring():
+            SFX_STORAGE['SHOOT'].play()
+            if k.score_grade(FINAL_SCORE[0]) >= 'd':
+                SFX_STORAGE['CHEER'].play()
+            else:
+                SFX_STORAGE['SCREAM'].play()
+
+            self.screen.fill(k.COLOR_BLACK)
+            COUNTING_SCORE[0] = FINAL_SCORE[0]
+            PLAYER_GRADE[0] = PURGE_SERIF_415.render(k.score_grade(MIAUSMA.score), True, k.COLOR_YELLOW)
+            GAME_SCORE[0] = PURGE_SERIF_175.render(k.display_score(FINAL_SCORE[0]), True, k.COLOR_WHITE)
+            self.screen.put_inside(JUDGEMENT_LABEL, k.JUDGEMENT_LABEL_POSITION)
+            self.screen.put_inside(PLAYER_GRADE[0], k.PLAYER_GRADE_POSITION2)
+            self.screen.put_inside(GAME_SCORE[0], k.GAME_SCORE_POSITION2)
+            END_TIMERS[4].set_timer_seconds(2)
+            END_TIMERS[4].activate()
+
+        if END_TIMERS[4].ring():
+            self.screen.put_inside(RETURN_DIALOGUE, k.RETURN_DIALOGUE_POSITION)
+            self.screen.update()
+            while True:
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                        self.gsm.set_state('main menu')
+
+                if self.gsm.get_state() == MainMenu:
+                    ABSTRACT_MINEFIELD.__init__(k.ABSTRACT_MINEFIELD_SIZE, k.ABSTRACT_MINEFIELD_DENSITY)
+                    MINEFIELD.__init__(k.MINEFIELD_SIZE, k.MINEFIELD_POSITION, MOUSE, Interfaces.Tile, (k.MINEFIELD_SIZE[0] // k.ABSTRACT_MINEFIELD_SIZE[0], k.MINEFIELD_SIZE[1] // k.ABSTRACT_MINEFIELD_SIZE[1]), ABSTRACT_MINEFIELD)
+                    MINEFIELD.fill_matrix()
+                    MINEFIELD.set_damage_available()
+                    MIAUSMA.wake()
+                    MIAUSMA.set_animation('idle', k.set_proportion(2.14, 2.24), 7)
+                    MIAUSMA.lives = k.MIAUSMA_LIVES
+                    MIAUSMA.flags = k.MIAUSMA_FLAGS
+                    MIAUSMA.set_current_speed([0, 0])
+                    MIAUSMA.score = 0
+                    MIAUSMA.multiplier = 1
+                    MIAUSMA_REACTS_BASE[0] = 'normal'
+                    MIAUSMA_REACTS.set_animation('normal', k.MIAUSMA_REACT_POSITION, 3)
+                    GAME_SCORE[0] = PURGE_SERIF_175.render(k.display_score(MIAUSMA.score), True, k.COLOR_WHITE)
+                    COUNTING_SCORE[0] = 0
+                    FINAL_SCORE.pop()
+                    self.screen.put_inside(BACKGROUND_MAIN_MENU, (0, 0))
+                    PLAYLIST_MAIN_MENU.queue_shuffle()
+                    PLAYLIST_MAIN_MENU.start()
+                    break

@@ -1,5 +1,4 @@
 import pygame
-from abc import ABC, abstractmethod
 import Others
 import Constantes as k
 
@@ -63,6 +62,8 @@ class Player(Sprite):
         self.facing_sprites_names = []
         self.digging = False
         self.damaged = False
+        self.score = 0
+        self.multiplier = 1
         self.max_lives = k.MIAUSMA_LIVES
         self.lives = k.MIAUSMA_LIVES
         self.max_flags = k.MIAUSMA_FLAGS
@@ -79,12 +80,35 @@ class Player(Sprite):
             mode = self.facing_sprites_names[side]
             self.set_animation(mode, self.rect.topleft, self.period)
 
+    def score_points(self, points):
+        self.score += points * self.multiplier
+
+    def increment_multiplier(self):
+        self.multiplier += 1
+
     def damage(self, value):
         self.damaged = True
         self.lives -= value
-        if self.lives < 0:
+        if self.lives <= 0:
             post_event = pygame.event.Event(k.GAME_OVER)
             pygame.event.post(post_event)
+
+    def heal(self, value):
+        self.lives += value
+        if self.lives > self.max_lives:
+            self.lives = self.max_lives
+            post_event = pygame.event.Event(k.OVERHEAL)
+            pygame.event.post(post_event)
+
+    def flag_up(self, value):
+        self.flags += value
+        if self.flags > self.max_flags:
+            self.flags = self.max_flags
+            post_event = pygame.event.Event(k.OVERFLAG)
+            pygame.event.post(post_event)
+
+    def flag_down(self, value):
+        self.flags -= value
 
     def wake(self):
         self.damaged = False
@@ -224,7 +248,7 @@ class Bomb(Sprite):
         group.add(new_flag, layer=layer)
         return new_flag
 
-class Collectable(ABC, Sprite):
+class Collectable(Sprite):
 
     def __init__(self, player, spawn, change_mode, lifetime):
         super().__init__()
@@ -253,33 +277,21 @@ class Collectable(ABC, Sprite):
         new_collectable.set_animation(self.current_mode, position, self.period)
         group.add(new_collectable, layer=layer)
 
-    @abstractmethod
     def effect(self):
-        pass
+        post_event = pygame.event.Event(k.GET_COLLECTABLE, {'caller': self})
+        pygame.event.post(post_event)
 
 class LifeCollectable(Collectable):
 
     def __init__(self, player, spawn, change_mode, lifetime):
         super().__init__(player, spawn, change_mode, lifetime)
 
-    def effect(self):
-        if self.player.lives + 1 > self.player.max_lives:
-            pass
-        else:
-            self.player.lives += 1
-
 class TimeCollectable(Collectable):
 
     def __init__(self, player, spawn, change_mode, lifetime):
         super().__init__(player, spawn, change_mode, lifetime)
 
-    def effect(self):
-        pass
-
 class FlagCollectable(Collectable):
 
     def __init__(self, player, spawn, change_mode, lifetime):
         super().__init__(player, spawn, change_mode, lifetime)
-
-    def effect(self):
-        pass

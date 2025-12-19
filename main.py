@@ -4,7 +4,7 @@ from Constantes import GAME_TITLE, SCREEN_DIMENSIONS, FPS
 if __name__ == '__main__':
 
     # ESTADOS E CLASSES DO ADMINISTRADOR DE ESTADOS
-    BUNDLES = (('main menu', Game.MainMenu), ('main game', Game.MainGame))
+    BUNDLES = (('main menu', Game.MainMenu), ('main game', Game.MainGame), ('end screen', Game.EndScreen))
 
     # INICIALIZANDO O JOGO
     game = Game.Game(GAME_TITLE, SCREEN_DIMENSIONS, FPS)
