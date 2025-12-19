@@ -41,7 +41,7 @@ class Mouse:
         self.right_press = False
 
 # UM TIMER QUE CONTA ATÉ ZERO
-class Timer():
+class Timer:
 
     def __init__(self):
         self.start_time = None

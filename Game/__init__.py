@@ -14,6 +14,9 @@ pygame.mixer.pre_init(44100, 16, 2, 4096)
 # INICIALIZANDO PYGAME
 pygame.init()
 
+# RESERVA O PRIMEIRO CANAL
+pygame.mixer.set_reserved(1)
+
 # INICIALIZANDO DISPLAY
 SCREEN = Interfaces.Screen()
 SCREEN.set_title(k.GAME_TITLE)
@@ -43,6 +46,10 @@ SFX_STORAGE = {
     'SHOOT': Sounds.SFX('Audio/sfx/shoot.ogg', k.VOLUME_SFX),
     'CHEER': Sounds.SFX('Audio/sfx/cheer.ogg', k.VOLUME_SFX),
     'SCREAM': Sounds.SFX('Audio/sfx/scream.ogg', k.VOLUME_SFX),
+    'ITEM': Sounds.SFX('Audio/sfx/item.ogg', k.VOLUME_SFX),
+    'PONTOS': Sounds.SFX('Audio/sfx/pontos.ogg', k.VOLUME_SFX),
+    'BUILDUP': Sounds.SFX('Audio/sfx/buildup.ogg', k.VOLUME_SFX),
+    'DROP': Sounds.SFX('Audio/sfx/drop.ogg', k.VOLUME_SFX),
 }
 
 # OBJETO DO MOUSE
@@ -458,10 +465,10 @@ AVAILABLE_TILE_TIMER = Others.Timer()
 END_TIMERS = [Others.Timer() for _ in range(5)]
 
 # TEXTO DA HORA DO JULGAMENTO
-JUDGEMENT_TIME_LABEL = RETURN_DIALOGUE = FUZZY_BUBBLES_100.render('HORA DO JULGAMENTO', True, k.COLOR_WHITE)
+JUDGEMENT_TIME_LABEL = FUZZY_BUBBLES_100.render('HORA DO JULGAMENTO', True, k.COLOR_WHITE)
 
 # TEXTO DO JULGAMENTO
-JUDGEMENT_LABEL = RETURN_DIALOGUE = FUZZY_BUBBLES_100.render('VOCÊ É...', True, k.COLOR_WHITE)
+JUDGEMENT_LABEL = FUZZY_BUBBLES_100.render('VOCÊ É...', True, k.COLOR_WHITE)
 
 # PONTUAÇÃO FINAL
 FINAL_SCORE = []
@@ -699,6 +706,7 @@ class Game:
 
                 # JOGADOR COLETOU UM COLETÁVEL
                 if event.type == k.GET_COLLECTABLE:
+                    SFX_STORAGE['ITEM'].play()
                     MIAUSMA_REACTS.set_animation(MIAUSMA_REACTS_BASE[0], k.MIAUSMA_REACT_POSITION, 3)
 
                     if event.caller.__class__ == Sprites.LifeCollectable:
@@ -728,6 +736,7 @@ class Game:
 
                 # O JOGO ACABOU
                 if event.type == k.GAME_OVER:
+                    SFX_STORAGE['BUILDUP'].play()
                     MIAUSMA_REACTS.set_animation('chora', k.MIAUSMA_REACT_POSITION, 3)
                     MINEFIELD.set_damage_unavailable()
                     GAME_START_VALUE.append(None)
@@ -980,6 +989,7 @@ class EndScreen:
             pygame.draw.line(self.screen.display, k.COLOR_BLACK, (randint(0, k.SCREEN_WIDTH), randint(0, k.SCREEN_HEIGHT)), (randint(0, k.SCREEN_WIDTH), randint(0, k.SCREEN_HEIGHT)), 100)
 
         if END_TIMERS[1].ring():
+            SFX_STORAGE['DROP'].play()
             self.screen.put_inside(JUDGEMENT_TIME_LABEL, k.JUDGEMENT_TIME_LABEL_POSITION)
             self.screen.put_inside(GAME_SCORE[0], k.GAME_SCORE_POSITION2)
             END_TIMERS[2].set_timer_seconds(3)
@@ -987,12 +997,14 @@ class EndScreen:
 
         if END_TIMERS[2].ring():
             while COUNTING_SCORE[0] < FINAL_SCORE[0] // 2:
+                SFX_STORAGE['PONTOS'].play()
                 self.screen.fill(k.COLOR_BLACK)
                 COUNTING_SCORE[0] += FINAL_SCORE[0] / 1000
                 GAME_SCORE[0] = PURGE_SERIF_175.render(k.display_score(COUNTING_SCORE[0]), True, k.COLOR_WHITE)
                 self.screen.put_inside(JUDGEMENT_LABEL, k.JUDGEMENT_LABEL_POSITION)
                 self.screen.put_inside(GAME_SCORE[0], k.GAME_SCORE_POSITION2)
                 self.screen.update()
+            pygame.mixer.find_channel().play(SFX_STORAGE['LOAD'])
             self.screen.fill(k.COLOR_BLACK)
             COUNTING_SCORE[0] = FINAL_SCORE[0] // 2
             GAME_SCORE[0] = PURGE_SERIF_175.render(k.display_score(COUNTING_SCORE[0]), True, k.COLOR_WHITE)
@@ -1001,7 +1013,6 @@ class EndScreen:
             self.screen.update()
             END_TIMERS[3].set_timer_seconds(1)
             END_TIMERS[3].activate()
-            SFX_STORAGE['LOAD'].play()
 
         if END_TIMERS[3].ring():
             SFX_STORAGE['SHOOT'].play()
@@ -1042,7 +1053,11 @@ class EndScreen:
                     MIAUSMA.multiplier = 1
                     MIAUSMA_REACTS_BASE[0] = 'normal'
                     MIAUSMA_REACTS.set_animation('normal', k.MIAUSMA_REACT_POSITION, 3)
+                    for sprite in PURGATORY:
+                        if sprite != MIAUSMA and sprite != MIAUSMA_REACTS:
+                            sprite.kill()
                     GAME_SCORE[0] = PURGE_SERIF_175.render(k.display_score(MIAUSMA.score), True, k.COLOR_WHITE)
+                    GAME_MULTIPLIER[0] = FUZZY_BUBBLES_60.render(k.display_multiplier(MIAUSMA.multiplier), True, k.COLOR_WHITE)
                     COUNTING_SCORE[0] = 0
                     FINAL_SCORE.pop()
                     self.screen.put_inside(BACKGROUND_MAIN_MENU, (0, 0))
