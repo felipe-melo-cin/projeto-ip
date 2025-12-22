@@ -1,12 +1,46 @@
 import pygame
 
-# TÍTULO DO JOGO, DIMENSÕES DA TELA E TAXA DE QUADROS
+# ADAPTAÇÃO DAS DIMENSÕES À ESCALA FORNECIDA
+def adapt_display_dimensions(scale, dimensions):
+    scale_w, scale_h = scale
+    width, height = dimensions
+    if width // scale_w > height // scale_h:
+        adapted_dimensions = (height // scale_h) * scale_w, height
+    else:
+        adapted_dimensions = width, (width // scale_w) * scale_h
+    return adapted_dimensions
+
+# PROPORÇÕES RELATIVAS À TELA
+def set_proportion(scale_x, scale_y):
+    return SCREEN_WIDTH // scale_x, SCREEN_HEIGHT // scale_y
+
+# PROPORÇÕES RELATIVAS À TELA (VALORES DE PONTO FLUTUANTE)
+def set_proportion_float(scale_x, scale_y):
+    return SCREEN_WIDTH / scale_x, SCREEN_HEIGHT / scale_y
+
+# TÍTULO DO JOGO
 GAME_TITLE = 'PURGATÓRIO'
-SCREEN_DIMENSIONS = (1920, 1080)
+
+# DIMENSÕES DA TELA
+pygame.display.init()
+SCREEN_INFO = pygame.display.Info()
+SCREEN_DIMENSIONS_RAW = SCREEN_INFO.current_w, SCREEN_INFO.current_h
+SCREEN_DIMENSIONS = adapt_display_dimensions((16, 9), SCREEN_DIMENSIONS_RAW)
+
+# TAXA DE QUADROS
 FPS = 60
 
 # DIMENSÕES DA TELA
 SCREEN_WIDTH, SCREEN_HEIGHT = SCREEN_DIMENSIONS
+
+# TAMANHO DAS FONTES
+FONT_SIZE_PURGE_SERIF_175 = int(max(set_proportion(10.9714, 10.9714)))
+FONT_SIZE_PURGE_SERIF_180 = int(max(set_proportion(10.6666, 10.6666)))
+FONT_SIZE_PURGE_SERIF_415 = int(max(set_proportion(4.6265, 4.6265)))
+
+FONT_SIZE_FUZZY_BUBBLES_40 = max(set_proportion(48, 48))
+FONT_SIZE_FUZZY_BUBBLES_60 = max(set_proportion(32, 32))
+FONT_SIZE_FUZZY_BUBBLES_80 = max(set_proportion(24, 24))
 
 # MÚSICAS
 VOLUME_BGM = 0.1
@@ -24,10 +58,6 @@ PLAYLIST_MAIN_GAME_MUSICS = [
 # EFEITOS SONOROS
 VOLUME_SFX = 0.2
 
-# PROPORÇÕES DA TELA
-def set_proportion(scale_x, scale_y):
-    return SCREEN_WIDTH // scale_x, SCREEN_HEIGHT // scale_y
-
 # DEFINIÇÕES DO CAMPO MINADO ABSTRATO
 ABSTRACT_MINEFIELD_SIZE = (10, 10)
 ABSTRACT_MINEFIELD_DENSITY = 0.12
@@ -43,10 +73,10 @@ TIME_LIMIT_SECONDS = 60
 MIAUSMA_SIZE = set_proportion((16/9) * ABSTRACT_MINEFIELD_SIZE[0], 1 * ABSTRACT_MINEFIELD_SIZE[1])
 MIAUSMA_LIVES = 7
 MIAUSMA_FLAGS = 10
-MIAUSMA_MAX_SPEED = 6
-MIAUSMA_ACC = 0.4
-MIAUSMA_DAMPEN = 0.1
-MIAUSMA_CDAMP = 0.2
+MIAUSMA_MAX_SPEED = max(set_proportion(320, 320))
+MIAUSMA_ACC = max(set_proportion_float(4800, 4800))
+MIAUSMA_DAMPEN = max(set_proportion_float(19200, 19200))
+MIAUSMA_CDAMP = max(set_proportion_float(9600, 9600))
 MIAUSMA_RANGE = 2
 
 # REAÇÕES DO PROTAGONISTA
@@ -98,8 +128,8 @@ RNG_TIME_COLLECTABLE = 40
 RNG_FLAG_COLLECTABLE = 10
 
 # TAMANHO DAS BANDEIRAS E DAS BOMBAS
-SIZE_FLAGS = (200, 200)
-SIZE_BOMBS = (200, 200)
+SIZE_FLAGS = set_proportion(9.6, 5.4)
+SIZE_BOMBS = set_proportion(9.6, 5.4)
 
 # TEMPO FORNECIDO PELO COLETÁVEL DE TEMPO
 TIME_COLLECTABLE_BONUS = 3
@@ -108,7 +138,7 @@ TIME_COLLECTABLE_BONUS = 3
 FLAG_LIMIT = 20
 
 # TAMANHO E TEMPO DE VIDA DOS COLETÁVEIS
-SIZE_COLLECTABLES = (100, 100)
+SIZE_COLLECTABLES = set_proportion(19.2, 10.8)
 LIFETIME_COLLECTABLES = 5
 
 # CORES
@@ -154,8 +184,8 @@ MINESWEEPER_UNFLAG = pygame.event.custom_type()
 MINESWEEPER_MISS = pygame.event.custom_type()
 
 # ESPESSURAS
-TILE_WIDTH = 7
-NUMBER_WIDTH = 10
+TILE_WIDTH = max(set_proportion(200, 200))
+NUMBER_WIDTH = max(set_proportion(150, 150))
 
 # TAMANHO DAS IMAGENS DOS BOTÕES
 TO_MAIN_GAME_BUTTON_MASK_SIZE = set_proportion(5.8, 15)
@@ -170,8 +200,8 @@ QUIT_GAME_BUTTON_POSITION = set_proportion(2.43, 1.2)
 
 PAUSE_BUTTON_SIZE = set_proportion(4.5714, 10)
 PAUSE_BUTTON_POSITION = set_proportion(1.28, 10000)
-PAUSE_BUTTON_BORDER_WIDTH = 10
-PAUSE_BUTTON_BORDER_RADIUS = 20
+PAUSE_BUTTON_BORDER_WIDTH = max(set_proportion(200, 200))
+PAUSE_BUTTON_BORDER_RADIUS = max(set_proportion(100, 100))
 
 # REDIMENSIONAMENTO DE IMAGENS
 def resize_image(scale, source):

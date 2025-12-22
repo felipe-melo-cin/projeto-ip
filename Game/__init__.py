@@ -56,14 +56,14 @@ SFX_STORAGE = {
 MOUSE = Others.Mouse()
 
 # FONTE CUSTOMIZADA
-PURGE_SERIF_175 = pygame.font.Font('Fonts/purge_serif.ttf', 175)
-PURGE_SERIF_180 = pygame.font.Font('Fonts/purge_serif.ttf', 180)
-PURGE_SERIF_415 = pygame.font.Font('Fonts/purge_serif.ttf', 415)
+PURGE_SERIF_175 = pygame.font.Font('Fonts/purge_serif.ttf', k.FONT_SIZE_PURGE_SERIF_175)
+PURGE_SERIF_180 = pygame.font.Font('Fonts/purge_serif.ttf', k.FONT_SIZE_PURGE_SERIF_180)
+PURGE_SERIF_415 = pygame.font.Font('Fonts/purge_serif.ttf', k.FONT_SIZE_PURGE_SERIF_415)
 
 # FONTE EXTRA
-FUZZY_BUBBLES_40 = pygame.font.Font('Fonts/fuzzy_bubbles.ttf', 40)
-FUZZY_BUBBLES_60 = pygame.font.Font('Fonts/fuzzy_bubbles.ttf', 60)
-FUZZY_BUBBLES_100 = pygame.font.Font('Fonts/fuzzy_bubbles.ttf', 80)
+FUZZY_BUBBLES_40 = pygame.font.Font('Fonts/fuzzy_bubbles.ttf', k.FONT_SIZE_FUZZY_BUBBLES_40)
+FUZZY_BUBBLES_60 = pygame.font.Font('Fonts/fuzzy_bubbles.ttf', k.FONT_SIZE_FUZZY_BUBBLES_60)
+FUZZY_BUBBLES_100 = pygame.font.Font('Fonts/fuzzy_bubbles.ttf', k.FONT_SIZE_FUZZY_BUBBLES_80)
 
 # PLANO DE FUNDO DO MENU PRINCIPAL
 BACKGROUND_MAIN_MENU = k.resize_image(k.SCREEN_DIMENSIONS, 'Images/background_main_menu.png')
@@ -470,14 +470,14 @@ JUDGEMENT_TIME_LABEL = FUZZY_BUBBLES_100.render('HORA DO JULGAMENTO', True, k.CO
 # TEXTO DO JULGAMENTO
 JUDGEMENT_LABEL = FUZZY_BUBBLES_100.render('VOCÊ É...', True, k.COLOR_WHITE)
 
+# PONTUAÇÃO PARA CONTAR NA TELA FINAL
+COUNTING_SCORE = [0]
+
 # PONTUAÇÃO FINAL
 FINAL_SCORE = []
 
 # DIÁLOGO DE RETORNO
 RETURN_DIALOGUE = FUZZY_BUBBLES_40.render('PRESSIONE ESC PARA RETORNAR AO MENU PRINCIPAL', True, k.COLOR_WHITE)
-
-# PONTUAÇÃO PARA CONTAR NA TELA FINAL
-COUNTING_SCORE = [0]
 
 class Game:
 
@@ -1040,10 +1040,13 @@ class EndScreen:
                         self.gsm.set_state('main menu')
 
                 if self.gsm.get_state() == MainMenu:
+                    # REINICIA O ESTADO DO CAMPO MINADO
                     ABSTRACT_MINEFIELD.__init__(k.ABSTRACT_MINEFIELD_SIZE, k.ABSTRACT_MINEFIELD_DENSITY)
                     MINEFIELD.__init__(k.MINEFIELD_SIZE, k.MINEFIELD_POSITION, MOUSE, Interfaces.Tile, (k.MINEFIELD_SIZE[0] // k.ABSTRACT_MINEFIELD_SIZE[0], k.MINEFIELD_SIZE[1] // k.ABSTRACT_MINEFIELD_SIZE[1]), ABSTRACT_MINEFIELD)
                     MINEFIELD.fill_matrix()
                     MINEFIELD.set_damage_available()
+
+                    # REINICIA O ESTADO DO PROTAGONISTA
                     MIAUSMA.wake()
                     MIAUSMA.set_animation('idle', k.set_proportion(2.14, 2.24), 7)
                     MIAUSMA.lives = k.MIAUSMA_LIVES
@@ -1051,16 +1054,29 @@ class EndScreen:
                     MIAUSMA.set_current_speed([0, 0])
                     MIAUSMA.score = 0
                     MIAUSMA.multiplier = 1
+
+                    # REINICIA O ESTADO DAS REAÇÕES DO PROTAGONISTA
                     MIAUSMA_REACTS_BASE[0] = 'normal'
                     MIAUSMA_REACTS.set_animation('normal', k.MIAUSMA_REACT_POSITION, 3)
+
+                    # ELIMINA OS SPRITES RESTANTES
                     for sprite in PURGATORY:
                         if sprite != MIAUSMA and sprite != MIAUSMA_REACTS:
                             sprite.kill()
+
+                    # REINICIA OS CONTADORES
+                    PLAYER_GRADE[0] = PURGE_SERIF_415.render('', True, k.COLOR_YELLOW)
                     GAME_SCORE[0] = PURGE_SERIF_175.render(k.display_score(MIAUSMA.score), True, k.COLOR_WHITE)
                     GAME_MULTIPLIER[0] = FUZZY_BUBBLES_60.render(k.display_multiplier(MIAUSMA.multiplier), True, k.COLOR_WHITE)
+                    TIME_LEFT[0] = PURGE_SERIF_180.render(k.time_milliseconds_to_display(k.TIME_LIMIT_SECONDS * 1000), True, k.COLOR_WHITE)
+                    FLAG_COUNTER[0] = FUZZY_BUBBLES_100.render(k.display_out_of(MIAUSMA.flags, MIAUSMA.max_flags), True, k.COLOR_WHITE)
+                    SEVEN_LIVES.set_lives(MIAUSMA.lives)
                     COUNTING_SCORE[0] = 0
                     FINAL_SCORE.pop()
+
+                    # REINICIA O ESTADO DO MENU PRINCIPAL
                     self.screen.put_inside(BACKGROUND_MAIN_MENU, (0, 0))
                     PLAYLIST_MAIN_MENU.queue_shuffle()
                     PLAYLIST_MAIN_MENU.start()
+
                     break

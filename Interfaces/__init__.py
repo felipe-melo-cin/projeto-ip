@@ -24,7 +24,7 @@ class Screen:
 
     def show(self):
         # MOSTRA A TELA
-        self.display = pygame.display.set_mode(self.size)
+        self.display = pygame.display.set_mode(self.size, pygame.NOFRAME)
 
     def fill(self, color):
         # PREENCHE A TELA COM UMA COR
