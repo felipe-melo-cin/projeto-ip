@@ -1,5 +1,4 @@
 import pygame
-import Constantes as k
 
 class Mouse:
 
